@@ -5,11 +5,14 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import os
 
+# Streamlit settings
+st.set_page_config(page_title="AECOM Service Information Request", page_icon="📧")
+
 # Outlook SMTP settings
 SMTP_SERVER = "smtp.office365.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "your_outlook_email@yourcompany.com"
-SENDER_PASSWORD = "your_app_password"  # Use an app password for security
+SENDER_EMAIL = st.secrets["SENDER_EMAIL"]
+SENDER_PASSWORD = st.secrets["SENDER_PASSWORD"]
 
 # Recipient emails
 RECIPIENTS = {
@@ -20,12 +23,10 @@ RECIPIENTS = {
 }
 
 def send_email(sender_name, location, attachment):
-    # Create message
     msg = MIMEMultipart()
-    msg['From'] = f"{sender_name} via Company <{SENDER_EMAIL}>"
+    msg['From'] = f"{sender_name} via AECOM <{SENDER_EMAIL}>"
     msg['Subject'] = f"Service Information Request - {location}"
 
-    # Email body
     body = f"""To whom it may concern,
 
 We are planning work in the {location} area. I have attached a location map to show where we would require service information. I would be obliged if you could provide me with details of any existing services at this location and within the surrounding area.
@@ -37,13 +38,11 @@ Best regards,
 
     msg.attach(MIMEText(body, 'plain'))
 
-    # Attach the file
     with open(attachment, "rb") as file:
         part = MIMEApplication(file.read(), Name=os.path.basename(attachment))
     part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment)}"'
     msg.attach(part)
 
-    # Send emails
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
@@ -56,24 +55,27 @@ Best regards,
         st.error(f"An error occurred: {str(e)}")
 
 def main():
-    st.title("Service Information Request Email Sender")
+    st.title("AECOM Service Information Request")
 
-    sender_name = st.text_input("Your Name")
-    location = st.text_input("Work Location")
-    
-    uploaded_file = st.file_uploader("Upload Location Map", type=["pdf", "jpg", "png"])
-    
-    if st.button("Send Emails") and sender_name and location and uploaded_file:
-        # Save uploaded file temporarily
-        with open(uploaded_file.name, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        
-        send_email(sender_name, location, uploaded_file.name)
-        
-        # Remove temporary file
-        os.remove(uploaded_file.name)
-    elif st.button("Send Emails"):
-        st.warning("Please fill in all fields and upload a location map.")
+    # Use st.form to group related inputs and prevent duplicate widget IDs
+    with st.form(key='email_form'):
+        sender_name = st.text_input("Your Name")
+        location = st.text_input("Work Location")
+        uploaded_file = st.file_uploader("Upload Location Map", type=["pdf", "jpg", "png"])
+        submit_button = st.form_submit_button(label="Send Emails")
+
+    if submit_button:
+        if sender_name and location and uploaded_file:
+            # Save uploaded file temporarily
+            with open(uploaded_file.name, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            send_email(sender_name, location, uploaded_file.name)
+            
+            # Remove temporary file
+            os.remove(uploaded_file.name)
+        else:
+            st.warning("Please fill in all fields and upload a location map.")
 
 if __name__ == "__main__":
     main()

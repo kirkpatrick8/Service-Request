@@ -19,7 +19,17 @@ RECIPIENTS = {
     "NIE": "Markups@nienetworks.co.uk",
     "Phoenix": "dialbeforeyoudig@phoenixnaturalgas.com",
     "Firmus": "dialb4udig@firmusenergy.co.uk",
-    "VM": "PlantEnquiriesTeam@virginmedia.co.uk"
+    "VM": "PlantEnquiriesTeam@virginmedia.co.uk",
+    "Northern": "dfiroads.northern@infrastructure-ni.gov.uk",
+    "Southern": "dfiroads.southern@infrastructure-ni.gov.uk",
+    "Eastern": "dfiroads.eastern@infrastructure-ni.gov.uk",
+    "Western": "dfiroads.western@infrastructure-ni.gov.uk",
+    "Greater Belfast": "rivers.belfast@infrastructure-ni.gov.uk",
+    "Lisburn": "rivers.lisburn@infrastructure-ni.gov.uk",
+    "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
+    "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
+    "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
+    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
 }
 
 def create_email_body(sender_name, location, return_email):
@@ -32,7 +42,7 @@ I trust you find this satisfactory, however if you should require any additional
 Best regards,
 {sender_name}"""
 
-def send_email(sender_name, location, attachment, return_email):
+def send_email(sender_name, location, attachment, return_email, selected_recipients, custom_emails):
     msg = MIMEMultipart()
     msg['From'] = f"{sender_name} via AECOM <{SENDER_EMAIL}>"
     msg['Subject'] = f"Service Information Request - {location}"
@@ -50,10 +60,14 @@ def send_email(sender_name, location, attachment, return_email):
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            for company, email in RECIPIENTS.items():
+            for recipient in selected_recipients:
+                msg['To'] = RECIPIENTS[recipient]
+                server.send_message(msg)
+                st.success(f"Email sent successfully to {recipient}")
+            for email in custom_emails:
                 msg['To'] = email
                 server.send_message(msg)
-                st.success(f"Email sent successfully to {company}")
+                st.success(f"Email sent successfully to {email}")
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
@@ -67,6 +81,8 @@ def main():
             sender_name = st.text_input("Your Name")
             location = st.text_input("Work Location")
             return_email = st.text_input("Return Email Address")
+            selected_recipients = st.multiselect("Select Recipients", options=list(RECIPIENTS.keys()))
+            custom_emails = st.text_area("Custom Email Addresses (one per line)")
             uploaded_file = st.file_uploader("Upload Location Map", type=["pdf", "jpg", "png"])
             submit_button = st.form_submit_button(label="Send Emails")
 
@@ -78,19 +94,29 @@ def main():
         else:
             st.info("Fill in the form to see the email preview")
 
+        st.subheader("Selected Recipients")
+        for recipient in selected_recipients:
+            st.write(f"- {recipient}: {RECIPIENTS[recipient]}")
+        
+        custom_email_list = [email.strip() for email in custom_emails.split('\n') if email.strip()]
+        if custom_email_list:
+            st.subheader("Custom Email Addresses")
+            for email in custom_email_list:
+                st.write(f"- {email}")
+
     if submit_button:
-        if sender_name and location and return_email and uploaded_file:
+        if sender_name and location and return_email and uploaded_file and (selected_recipients or custom_email_list):
             with st.spinner("Sending emails..."):
                 # Save uploaded file temporarily
                 with open(uploaded_file.name, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 
-                send_email(sender_name, location, uploaded_file.name, return_email)
+                send_email(sender_name, location, uploaded_file.name, return_email, selected_recipients, custom_email_list)
                 
                 # Remove temporary file
                 os.remove(uploaded_file.name)
         else:
-            st.warning("Please fill in all fields and upload a location map.")
+            st.warning("Please fill in all required fields, select at least one recipient or add a custom email, and upload a location map.")
 
 if __name__ == "__main__":
     main()

@@ -118,5 +118,10 @@ def main():
         else:
             st.warning("Please fill in all required fields, select at least one recipient or add a custom email, and upload a location map.")
 
+    # Footer with contact information
+    st.markdown("---")
+    st.markdown("Made by [Mark Kirkpatrick](mailto:mark.kirkpatrick@aecom.com)")
+    st.markdown("For any queries, please email [mark.kirkpatrick@aecom.com](mailto:mark.kirkpatrick@aecom.com)")
+
 if __name__ == "__main__":
     main()

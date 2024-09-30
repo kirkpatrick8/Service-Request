@@ -11,8 +11,8 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 # Outlook SMTP settings
 SMTP_SERVER = "smtp.office365.com"
 SMTP_PORT = 587
-SENDER_EMAIL = st.secrets["SENDER_EMAIL"]
-SENDER_PASSWORD = st.secrets["SENDER_PASSWORD"]
+SENDER_EMAIL = st.secrets["OUTLOOK_EMAIL"]
+SENDER_PASSWORD = st.secrets["OUTLOOK_PASSWORD"]
 
 # Recipient emails
 RECIPIENTS = {
@@ -57,7 +57,6 @@ Best regards,
 def main():
     st.title("AECOM Service Information Request")
 
-    # Use st.form to group related inputs and prevent duplicate widget IDs
     with st.form(key='email_form'):
         sender_name = st.text_input("Your Name")
         location = st.text_input("Work Location")
@@ -66,14 +65,15 @@ def main():
 
     if submit_button:
         if sender_name and location and uploaded_file:
-            # Save uploaded file temporarily
-            with open(uploaded_file.name, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            send_email(sender_name, location, uploaded_file.name)
-            
-            # Remove temporary file
-            os.remove(uploaded_file.name)
+            with st.spinner("Sending emails..."):
+                # Save uploaded file temporarily
+                with open(uploaded_file.name, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                
+                send_email(sender_name, location, uploaded_file.name)
+                
+                # Remove temporary file
+                os.remove(uploaded_file.name)
         else:
             st.warning("Please fill in all fields and upload a location map.")
 

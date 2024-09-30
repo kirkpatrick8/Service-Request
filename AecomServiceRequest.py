@@ -11,8 +11,8 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 # Outlook SMTP settings
 SMTP_SERVER = "smtp.office365.com"
 SMTP_PORT = 587
-SENDER_EMAIL = st.secrets["OUTLOOK_EMAIL"]
-SENDER_PASSWORD = st.secrets["OUTLOOK_PASSWORD"]
+SENDER_EMAIL = "your-outlook-email@example.com"  # Replace with your actual email
+SENDER_PASSWORD = "your-app-password"  # Replace with your actual app password
 
 # Recipient emails
 RECIPIENTS = {

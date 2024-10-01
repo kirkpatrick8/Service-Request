@@ -1,23 +1,23 @@
 import streamlit as st
-import datetime
+import pyperclip
 
 # Recipient emails
 RECIPIENTS = {
     "NIE": "Markups@nienetworks.co.uk",
     "Phoenix": "dialbeforeyoudig@phoenixnaturalgas.com",
     "Firmus": "dialb4udig@firmusenergy.co.uk",
-    "Virgin Media": "PlantEnquiriesTeam@virginmedia.co.uk",
-    "Northern DFI": "dfiroads.northern@infrastructure-ni.gov.uk",
-    "Southern DFI": "dfiroads.southern@infrastructure-ni.gov.uk",
-    "Eastern DFI": "dfiroads.eastern@infrastructure-ni.gov.uk",
-    "Western DFI": "dfiroads.western@infrastructure-ni.gov.uk",
-    "Greater Belfast Rivers": "rivers.belfast@infrastructure-ni.gov.uk",
-    "Lisburn Rivers": "rivers.lisburn@infrastructure-ni.gov.uk",
-    "Coleraine Rivers": "rivers.coleraine@infrastructure-ni.gov.uk",
-    "Armagh Rivers": "rivers.armagh@infrastructure-ni.gov.uk",
-    "Fermanagh Rivers": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Omagh Rivers": "rivers.omagh@infrastructure-ni.gov.uk",
-    "Creator": "mark.kirkpatrick@aecom.com"
+    "VM": "PlantEnquiriesTeam@virginmedia.co.uk",
+    "Northern": "dfiroads.northern@infrastructure-ni.gov.uk",
+    "Southern": "dfiroads.southern@infrastructure-ni.gov.uk",
+    "Eastern": "dfiroads.eastern@infrastructure-ni.gov.uk",
+    "Western": "dfiroads.western@infrastructure-ni.gov.uk",
+    "Greater Belfast": "rivers.belfast@infrastructure-ni.gov.uk",
+    "Lisburn": "rivers.lisburn@infrastructure-ni.gov.uk",
+    "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
+    "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
+    "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
+    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk",
+    "Test": "hannah.finlay@aecom.com"
 }
 
 def generate_email(sender_name, location, return_email, recipients):
@@ -39,7 +39,11 @@ AECOM
 """
     
     full_email = f"To: {to_line}\nSubject: {subject}\n\n{body}"
-    return full_email
+    return full_email, to_line
+
+def copy_to_clipboard(text):
+    pyperclip.copy(text)
+    st.success("Copied to clipboard!")
 
 def main():
     st.title("AECOM Service Information Request Email Generator")
@@ -51,32 +55,27 @@ def main():
     selected_recipients = st.multiselect("Select Recipients", options=list(RECIPIENTS.keys()))
     custom_emails = st.text_area("Custom Email Addresses (one per line)")
     
+    st.warning("Remember to attach an image or document of the site boundary when sending the email!")
+    
     if st.button("Generate Email"):
         if sender_name and location and return_email and (selected_recipients or custom_emails):
             custom_email_list = [email.strip() for email in custom_emails.split('\n') if email.strip()]
             all_recipients = selected_recipients + custom_email_list
             
-            email_content = generate_email(sender_name, location, return_email, all_recipients)
+            email_content, to_line = generate_email(sender_name, location, return_email, all_recipients)
             
             st.subheader("Generated Email:")
-            st.text_area("Copy this email:", email_content, height=400)
+            st.text_area("Email Content:", email_content, height=400)
             
-            # Add a button to copy the email content
-            st.markdown("###")
-            st.markdown(f"<p id='email-content' style='display:none'>{email_content}</p>", unsafe_allow_html=True)
-            st.markdown("""
-            <button onclick="copyEmail()">Copy Email</button>
-            <script>
-            function copyEmail() {
-                var content = document.getElementById('email-content').innerText;
-                navigator.clipboard.writeText(content).then(function() {
-                    alert('Email copied to clipboard!');
-                }, function(err) {
-                    alert('Could not copy text: ', err);
-                });
-            }
-            </script>
-            """, unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Copy Email Content"):
+                    copy_to_clipboard(email_content)
+            with col2:
+                if st.button("Copy Recipient Addresses"):
+                    copy_to_clipboard(to_line)
+            
+            st.info("Don't forget to attach the site boundary image/document before sending the email!")
         else:
             st.warning("Please fill in all required fields and select at least one recipient.")
     

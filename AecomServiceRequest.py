@@ -1,6 +1,7 @@
 import streamlit as st
-from O365 import Account
+import requests
 import msal
+import base64
 import os
 
 # Streamlit settings
@@ -10,6 +11,10 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 CLIENT_ID = "9dc71e18-a76a-4f05-9eb0-2f0a5c3b92e5"
 CLIENT_SECRET = "LXG8Q~WDCbehS6beg..adkAszboKK3GwaJvyjcSL"
 TENANT_ID = "16ed5ab4-2b59-4e40-806d-8a30bdc9cf26"
+SENDER_EMAIL = "markkirkpatrick@aecom.com"
+
+# Microsoft Graph API endpoint
+GRAPH_ENDPOINT = "https://graph.microsoft.com/v1.0"
 
 # Scopes required for sending email
 SCOPES = ['https://graph.microsoft.com/Mail.Send']
@@ -54,12 +59,12 @@ def send_email(sender_name, location, attachment, return_email, selected_recipie
         st.error("Failed to acquire token. Please check your Azure AD configuration.")
         return
 
-    account = Account(credentials=token)
-    m = account.new_message()
-    m.sender.address = "markkirkpatrick@aecom.com"
-    m.subject = f"Service Information Request - {location}"
+    # Read attachment
+    with open(attachment, 'rb') as file:
+        attachment_content = base64.b64encode(file.read()).decode('utf-8')
 
-    body = f"""To whom it may concern,
+    # Prepare email message
+    email_body = f"""To whom it may concern,
 
 We are planning work in the {location} area. I have attached a location map to show where we would require service information. I would be obliged if you could provide me with details of any existing services at this location and within the surrounding area.
 
@@ -68,21 +73,47 @@ I trust you find this satisfactory, however if you should require any additional
 Best regards,
 {sender_name}"""
 
-    m.body = body
+    for recipient in selected_recipients + custom_emails:
+        email_address = RECIPIENTS.get(recipient, recipient)
+        message = {
+            "message": {
+                "subject": f"Service Information Request - {location}",
+                "body": {
+                    "contentType": "Text",
+                    "content": email_body
+                },
+                "toRecipients": [
+                    {
+                        "emailAddress": {
+                            "address": email_address
+                        }
+                    }
+                ],
+                "attachments": [
+                    {
+                        "@odata.type": "#microsoft.graph.fileAttachment",
+                        "name": os.path.basename(attachment),
+                        "contentType": "application/octet-stream",
+                        "contentBytes": attachment_content
+                    }
+                ]
+            }
+        }
 
-    # Attach the file
-    with open(attachment, 'rb') as file_obj:
-        m.attachments.add(file_obj)
+        # Send email using Microsoft Graph API
+        response = requests.post(
+            f"{GRAPH_ENDPOINT}/users/{SENDER_EMAIL}/sendMail",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            },
+            json=message
+        )
 
-    try:
-        for recipient in selected_recipients:
-            m.to.add(RECIPIENTS[recipient])
-        for email in custom_emails:
-            m.to.add(email)
-        m.send()
-        st.success("Emails sent successfully!")
-    except Exception as e:
-        st.error(f"An error occurred while sending emails: {str(e)}")
+        if response.status_code == 202:
+            st.success(f"Email sent successfully to {email_address}")
+        else:
+            st.error(f"Failed to send email to {email_address}. Status code: {response.status_code}")
 
 def main():
     st.title("AECOM Service Information Request")

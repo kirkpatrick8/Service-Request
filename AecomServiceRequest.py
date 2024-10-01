@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_msal import Msal
+import msal
 import requests
 import base64
 import os
@@ -9,6 +9,7 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 
 # Azure AD App Registration details
 CLIENT_ID = "9dc71e18-a76a-4f05-9eb0-2f0a5c3b92e5"
+CLIENT_SECRET = "LXG8Q~WDCbehS6beg..adkAszboKK3GwaJvyjcSL"
 TENANT_ID = "16ed5ab4-2b59-4e40-806d-8a30bdc9cf26"
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 SCOPES = ['https://graph.microsoft.com/Mail.Send']
@@ -36,6 +37,21 @@ RECIPIENTS = {
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
     "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
 }
+
+# Initialize MSAL client
+msal_client = msal.ConfidentialClientApplication(
+    CLIENT_ID, authority=AUTHORITY, client_credential=CLIENT_SECRET
+)
+
+def get_token():
+    result = msal_client.acquire_token_silent(SCOPES, account=None)
+    if not result:
+        result = msal_client.acquire_token_for_client(scopes=SCOPES)
+    if "access_token" in result:
+        return result['access_token']
+    else:
+        st.error(f"Failed to acquire token: {result.get('error')} - {result.get('error_description')}")
+        return None
 
 def send_email(token, sender_name, location, attachment, return_email, selected_recipients, custom_emails):
     # Read attachment
@@ -97,19 +113,11 @@ Best regards,
 def main():
     st.title("AECOM Service Information Request")
 
-    # Initialize MSAL authentication
-    with st.sidebar:
-        auth_data = Msal.initialize_ui(
-            client_id=CLIENT_ID,
-            authority=AUTHORITY,
-            scopes=SCOPES,
-        )
-
-    if not auth_data:
-        st.write("Please authenticate to use the application")
-        st.stop()
-
-    token = auth_data["accessToken"]
+    # Get token
+    token = get_token()
+    if not token:
+        st.error("Authentication failed. Please check your Azure AD configuration.")
+        return
 
     col1, col2 = st.columns(2)
 

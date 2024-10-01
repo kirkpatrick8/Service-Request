@@ -38,55 +38,39 @@ AECOM
 """
     
     full_email = f"To: {to_line}\nSubject: {subject}\n\n{body}"
-    return full_email, to_line, body
+    return full_email, to_line
 
 def main():
-    st.set_page_config(page_title="AECOM Email Generator", page_icon="📧", layout="wide")
+    st.title("AECOM Service Information Request Email Generator")
     
-    st.title("📧 AECOM Service Information Request Email Generator")
+    sender_name = st.text_input("Your Name")
+    location = st.text_input("Work Location")
+    return_email = st.text_input("Return Email Address")
     
-    col1, col2 = st.columns([2, 1])
+    selected_recipients = st.multiselect("Select Recipients", options=list(RECIPIENTS.keys()))
+    custom_emails = st.text_area("Custom Email Addresses (one per line)")
     
-    with col1:
-        st.subheader("📝 Email Details")
-        sender_name = st.text_input("👤 Your Name")
-        location = st.text_input("📍 Work Location")
-        return_email = st.text_input("📮 Return Email Address")
-        
-        st.subheader("🎯 Recipients")
-        selected_recipients = st.multiselect("Select Recipients", options=list(RECIPIENTS.keys()))
-        
-        with st.expander("➕ Add Custom Email Addresses"):
-            custom_emails = st.text_area("Enter one email per line")
+    st.warning("Remember to attach an image or document of the site boundary when sending the email!")
     
-    with col2:
-        st.subheader("📎 Attachments")
-        st.warning("⚠️ Remember to attach an image or document of the site boundary when sending the email!")
-        
-        st.subheader("🔍 Preview")
+    if st.button("Generate Email"):
         if sender_name and location and return_email and (selected_recipients or custom_emails):
             custom_email_list = [email.strip() for email in custom_emails.split('\n') if email.strip()]
             all_recipients = selected_recipients + custom_email_list
             
-            email_content, to_line, body = generate_email(sender_name, location, return_email, all_recipients)
+            email_content, to_line = generate_email(sender_name, location, return_email, all_recipients)
             
-            st.markdown(f"**To:** {to_line}")
-            st.markdown(f"**Subject:** Service Information Request - {location}")
-            st.markdown(body)
+            st.subheader("Generated Email:")
+            st.text_area("Email Content:", email_content, height=400)
             
-            st.info(f"📊 Character count: {len(body)}")
+            st.subheader("Recipient Addresses:")
+            st.text_area("To:", to_line, height=100)
+            
+            st.info("Don't forget to attach the site boundary image/document before sending the email!")
         else:
-            st.info("Fill in the details to see a preview of your email here.")
-    
-    if st.button("🚀 Generate Email"):
-        if sender_name and location and return_email and (selected_recipients or custom_emails):
-            st.success("Email generated successfully!")
-            st.text_area("📤 Generated Email Content", email_content, height=300)
-        else:
-            st.error("Please fill in all required fields and select at least one recipient.")
+            st.warning("Please fill in all required fields and select at least one recipient.")
     
     st.markdown("---")
-    st.markdown("Made with ❤️ by [Mark Kirkpatrick](mailto:mark.kirkpatrick@aecom.com)")
+    st.markdown("Made by [Mark Kirkpatrick](mailto:mark.kirkpatrick@aecom.com)")
     st.markdown("For any queries, please email [mark.kirkpatrick@aecom.com](mailto:mark.kirkpatrick@aecom.com)")
 
 if __name__ == "__main__":

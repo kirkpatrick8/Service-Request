@@ -35,7 +35,7 @@ RECIPIENTS = {
     "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
     "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
+    "Test": "hannah.finlay@aecom.com"
 }
 
 def acquire_token():

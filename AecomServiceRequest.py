@@ -1,24 +1,24 @@
 import streamlit as st
-import pyperclip
 
 # Recipient emails
 RECIPIENTS = {
     "NIE": "Markups@nienetworks.co.uk",
     "Phoenix": "dialbeforeyoudig@phoenixnaturalgas.com",
     "Firmus": "dialb4udig@firmusenergy.co.uk",
-    "VM": "PlantEnquiriesTeam@virginmedia.co.uk",
-    "Northern": "dfiroads.northern@infrastructure-ni.gov.uk",
-    "Southern": "dfiroads.southern@infrastructure-ni.gov.uk",
-    "Eastern": "dfiroads.eastern@infrastructure-ni.gov.uk",
-    "Western": "dfiroads.western@infrastructure-ni.gov.uk",
-    "Greater Belfast": "rivers.belfast@infrastructure-ni.gov.uk",
-    "Lisburn": "rivers.lisburn@infrastructure-ni.gov.uk",
-    "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
-    "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
-    "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk",
-    "Test": "hannah.finlay@aecom.com"
+    "Virgin Media": "PlantEnquiriesTeam@virginmedia.co.uk",
+    "Northern DFI": "dfiroads.northern@infrastructure-ni.gov.uk",
+    "Southern DFI": "dfiroads.southern@infrastructure-ni.gov.uk",
+    "Eastern DFI": "dfiroads.eastern@infrastructure-ni.gov.uk",
+    "Western DFI": "dfiroads.western@infrastructure-ni.gov.uk",
+    "Greater Belfast Rivers": "rivers.belfast@infrastructure-ni.gov.uk",
+    "Lisburn Rivers": "rivers.lisburn@infrastructure-ni.gov.uk",
+    "Coleraine Rivers": "rivers.coleraine@infrastructure-ni.gov.uk",
+    "Armagh Rivers": "rivers.armagh@infrastructure-ni.gov.uk",
+    "Fermanagh Rivers": "rivers.fermanagh@infrastructure-ni.gov.uk",
+    "Omagh Rivers": "rivers.omagh@infrastructure-ni.gov.uk",
+    "Creator": "mark.kirkpatrick@aecom.com"
 }
+
 
 def generate_email(sender_name, location, return_email, recipients):
     recipient_emails = [RECIPIENTS.get(r, r) for r in recipients]
@@ -40,10 +40,6 @@ AECOM
     
     full_email = f"To: {to_line}\nSubject: {subject}\n\n{body}"
     return full_email, to_line
-
-def copy_to_clipboard(text):
-    pyperclip.copy(text)
-    st.success("Copied to clipboard!")
 
 def main():
     st.title("AECOM Service Information Request Email Generator")
@@ -69,11 +65,11 @@ def main():
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Copy Email Content"):
-                    copy_to_clipboard(email_content)
+                st.text_area("Recipient Addresses:", to_line, height=100)
             with col2:
-                if st.button("Copy Recipient Addresses"):
-                    copy_to_clipboard(to_line)
+                st.markdown("### Copy buttons:")
+                st.button("Copy Email Content", on_click=lambda: st.write(f'<p>{email_content}</p>', unsafe_allow_html=True))
+                st.button("Copy Recipient Addresses", on_click=lambda: st.write(f'<p>{to_line}</p>', unsafe_allow_html=True))
             
             st.info("Don't forget to attach the site boundary image/document before sending the email!")
         else:

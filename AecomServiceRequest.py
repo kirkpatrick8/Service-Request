@@ -1,6 +1,6 @@
 import streamlit as st
+from streamlit_msal import Msal
 import requests
-import msal
 import base64
 import os
 
@@ -9,21 +9,15 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 
 # Azure AD App Registration details
 CLIENT_ID = "9dc71e18-a76a-4f05-9eb0-2f0a5c3b92e5"
-CLIENT_SECRET = "LXG8Q~WDCbehS6beg..adkAszboKK3GwaJvyjcSL"
 TENANT_ID = "16ed5ab4-2b59-4e40-806d-8a30bdc9cf26"
-SENDER_EMAIL = "markkirkpatrick@aecom.com"
+AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
+SCOPES = ['https://graph.microsoft.com/Mail.Send']
 
 # Microsoft Graph API endpoint
 GRAPH_ENDPOINT = "https://graph.microsoft.com/v1.0"
 
-# Scopes required for sending email
-SCOPES = ['https://graph.microsoft.com/Mail.Send']
-
-# Initialize the MSAL app
-app = msal.ConfidentialClientApplication(
-    CLIENT_ID, authority=f"https://login.microsoftonline.com/{TENANT_ID}",
-    client_credential=CLIENT_SECRET
-)
+# Sender email
+SENDER_EMAIL = "markkirkpatrick@aecom.com"
 
 # Recipient emails
 RECIPIENTS = {
@@ -40,25 +34,10 @@ RECIPIENTS = {
     "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
     "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Test": "hannah.finlay@aecom.com"
+    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
 }
 
-def acquire_token():
-    result = app.acquire_token_silent(SCOPES, account=None)
-    if not result:
-        result = app.acquire_token_for_client(scopes=SCOPES)
-    if "access_token" in result:
-        return result['access_token']
-    else:
-        st.error(f"Token acquisition failed: {result.get('error')} - {result.get('error_description')}")
-        return None
-
-def send_email(sender_name, location, attachment, return_email, selected_recipients, custom_emails):
-    token = acquire_token()
-    if not token:
-        st.error("Failed to acquire token. Please check your Azure AD configuration.")
-        return
-
+def send_email(token, sender_name, location, attachment, return_email, selected_recipients, custom_emails):
     # Read attachment
     with open(attachment, 'rb') as file:
         attachment_content = base64.b64encode(file.read()).decode('utf-8')
@@ -118,6 +97,20 @@ Best regards,
 def main():
     st.title("AECOM Service Information Request")
 
+    # Initialize MSAL authentication
+    with st.sidebar:
+        auth_data = Msal.initialize_ui(
+            client_id=CLIENT_ID,
+            authority=AUTHORITY,
+            scopes=SCOPES,
+        )
+
+    if not auth_data:
+        st.write("Please authenticate to use the application")
+        st.stop()
+
+    token = auth_data["accessToken"]
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -162,7 +155,7 @@ Best regards,
                 with open(uploaded_file.name, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 
-                send_email(sender_name, location, uploaded_file.name, return_email, selected_recipients, custom_email_list)
+                send_email(token, sender_name, location, uploaded_file.name, return_email, selected_recipients, custom_email_list)
                 
                 # Remove temporary file
                 os.remove(uploaded_file.name)

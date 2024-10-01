@@ -19,7 +19,6 @@ RECIPIENTS = {
     "Creator": "mark.kirkpatrick@aecom.com"
 }
 
-
 def generate_email(sender_name, location, return_email, recipients):
     recipient_emails = [RECIPIENTS.get(r, r) for r in recipients]
     to_line = "; ".join(recipient_emails)
@@ -63,13 +62,27 @@ def main():
             st.subheader("Generated Email:")
             st.text_area("Email Content:", email_content, height=400)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.text_area("Recipient Addresses:", to_line, height=100)
-            with col2:
-                st.markdown("### Copy buttons:")
-                st.button("Copy Email Content", on_click=lambda: st.write(f'<p>{email_content}</p>', unsafe_allow_html=True))
-                st.button("Copy Recipient Addresses", on_click=lambda: st.write(f'<p>{to_line}</p>', unsafe_allow_html=True))
+            # JavaScript to copy text to clipboard
+            st.markdown("""
+            <script>
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('Copied to clipboard!');
+                }).catch(function(err) {
+                    alert('Failed to copy text: ', err);
+                });
+            }
+            </script>
+            """, unsafe_allow_html=True)
+            
+            # Buttons to copy content
+            st.button("Copy Email Content", on_click=lambda: st.markdown(f"""
+            <button onclick="copyToClipboard(`{email_content.replace('`', '\\`')}`)">Copy Email Content</button>
+            """, unsafe_allow_html=True))
+            
+            st.button("Copy Recipient Addresses", on_click=lambda: st.markdown(f"""
+            <button onclick="copyToClipboard(`{to_line}`)">Copy Recipient Addresses</button>
+            """, unsafe_allow_html=True))
             
             st.info("Don't forget to attach the site boundary image/document before sending the email!")
         else:

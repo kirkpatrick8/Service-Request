@@ -1,18 +1,24 @@
 import streamlit as st
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
+from O365 import Account
+import msal
 import os
 
 # Streamlit settings
 st.set_page_config(page_title="AECOM Service Information Request", page_icon="📧", layout="wide")
 
-# Outlook SMTP settings
-SMTP_SERVER = "smtp.office365.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "mark.kirkpatrick@aecom.com"  # Replace with your actual email
-SENDER_PASSWORD = "Beth2024"  # Replace with your actual app password
+# Azure AD App Registration details
+CLIENT_ID = "9dc71e18-a76a-4f05-9eb0-2f0a5c3b92e5"
+CLIENT_SECRET = "LXG8Q~WDCbehS6beg..adkAszboKK3GwaJvyjcSL"
+TENANT_ID = "16ed5ab4-2b59-4e40-806d-8a30bdc9cf26"
+
+# Scopes required for sending email
+SCOPES = ['https://graph.microsoft.com/Mail.Send']
+
+# Initialize the MSAL app
+app = msal.ConfidentialClientApplication(
+    CLIENT_ID, authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+    client_credential=CLIENT_SECRET
+)
 
 # Recipient emails
 RECIPIENTS = {
@@ -29,11 +35,31 @@ RECIPIENTS = {
     "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
     "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Test": "hannah.finlay@aecom.com"
+    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
 }
 
-def create_email_body(sender_name, location, return_email):
-    return f"""To whom it may concern,
+def acquire_token():
+    result = app.acquire_token_silent(SCOPES, account=None)
+    if not result:
+        result = app.acquire_token_for_client(scopes=SCOPES)
+    if "access_token" in result:
+        return result['access_token']
+    else:
+        st.error(f"Token acquisition failed: {result.get('error')} - {result.get('error_description')}")
+        return None
+
+def send_email(sender_name, location, attachment, return_email, selected_recipients, custom_emails):
+    token = acquire_token()
+    if not token:
+        st.error("Failed to acquire token. Please check your Azure AD configuration.")
+        return
+
+    account = Account(credentials=token)
+    m = account.new_message()
+    m.sender.address = "markkirkpatrick@aecom.com"
+    m.subject = f"Service Information Request - {location}"
+
+    body = f"""To whom it may concern,
 
 We are planning work in the {location} area. I have attached a location map to show where we would require service information. I would be obliged if you could provide me with details of any existing services at this location and within the surrounding area.
 
@@ -42,34 +68,21 @@ I trust you find this satisfactory, however if you should require any additional
 Best regards,
 {sender_name}"""
 
-def send_email(sender_name, location, attachment, return_email, selected_recipients, custom_emails):
-    msg = MIMEMultipart()
-    msg['From'] = f"{sender_name} via AECOM <{SENDER_EMAIL}>"
-    msg['Subject'] = f"Service Information Request - {location}"
-    msg['Reply-To'] = return_email
+    m.body = body
 
-    body = create_email_body(sender_name, location, return_email)
-    msg.attach(MIMEText(body, 'plain'))
-
-    with open(attachment, "rb") as file:
-        part = MIMEApplication(file.read(), Name=os.path.basename(attachment))
-    part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment)}"'
-    msg.attach(part)
+    # Attach the file
+    with open(attachment, 'rb') as file_obj:
+        m.attachments.add(file_obj)
 
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            for recipient in selected_recipients:
-                msg['To'] = RECIPIENTS[recipient]
-                server.send_message(msg)
-                st.success(f"Email sent successfully to {recipient}")
-            for email in custom_emails:
-                msg['To'] = email
-                server.send_message(msg)
-                st.success(f"Email sent successfully to {email}")
+        for recipient in selected_recipients:
+            m.to.add(RECIPIENTS[recipient])
+        for email in custom_emails:
+            m.to.add(email)
+        m.send()
+        st.success("Emails sent successfully!")
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        st.error(f"An error occurred while sending emails: {str(e)}")
 
 def main():
     st.title("AECOM Service Information Request")
@@ -89,7 +102,14 @@ def main():
     with col2:
         st.subheader("Email Preview")
         if sender_name and location and return_email:
-            preview = create_email_body(sender_name, location, return_email)
+            preview = f"""To whom it may concern,
+
+We are planning work in the {location} area. I have attached a location map to show where we would require service information. I would be obliged if you could provide me with details of any existing services at this location and within the surrounding area.
+
+I trust you find this satisfactory, however if you should require any additional information or clarification, please do not hesitate to contact me at {return_email}.
+
+Best regards,
+{sender_name}"""
             st.text_area("Email Content", preview, height=300)
         else:
             st.info("Fill in the form to see the email preview")

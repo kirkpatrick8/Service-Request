@@ -29,8 +29,7 @@ RECIPIENTS = {
     "Coleraine": "rivers.coleraine@infrastructure-ni.gov.uk",
     "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
-    "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
-    "test" : "hannah.finlay@aecom.com"
+    "Test": "hannah.finlay@aecom.com"
 }
 
 def create_email_body(sender_name, location, return_email):

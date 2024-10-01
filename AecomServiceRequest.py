@@ -11,8 +11,8 @@ st.set_page_config(page_title="AECOM Service Information Request", page_icon="ðŸ
 # Outlook SMTP settings
 SMTP_SERVER = "smtp.office365.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "your-outlook-email@example.com"  # Replace with your actual email
-SENDER_PASSWORD = "your-app-password"  # Replace with your actual app password
+SENDER_EMAIL = "mark.kirkpatrick@aecom.com"  # Replace with your actual email
+SENDER_PASSWORD = "Beth2024"  # Replace with your actual app password
 
 # Recipient emails
 RECIPIENTS = {
@@ -30,6 +30,7 @@ RECIPIENTS = {
     "Armagh": "rivers.armagh@infrastructure-ni.gov.uk",
     "Fermanagh": "rivers.fermanagh@infrastructure-ni.gov.uk",
     "Omagh": "rivers.omagh@infrastructure-ni.gov.uk"
+    "test" : "hannah.finlay@aecom.com"
 }
 
 def create_email_body(sender_name, location, return_email):

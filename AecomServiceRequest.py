@@ -62,27 +62,8 @@ def main():
             st.subheader("Generated Email:")
             st.text_area("Email Content:", email_content, height=400)
             
-            # JavaScript to copy text to clipboard
-            st.markdown("""
-            <script>
-            function copyToClipboard(text) {
-                navigator.clipboard.writeText(text).then(function() {
-                    alert('Copied to clipboard!');
-                }).catch(function(err) {
-                    alert('Failed to copy text: ', err);
-                });
-            }
-            </script>
-            """, unsafe_allow_html=True)
-            
-            # Buttons to copy content
-            st.button("Copy Email Content", on_click=lambda: st.markdown(f"""
-            <button onclick="copyToClipboard(`{email_content.replace('`', '\\`')}`)">Copy Email Content</button>
-            """, unsafe_allow_html=True))
-            
-            st.button("Copy Recipient Addresses", on_click=lambda: st.markdown(f"""
-            <button onclick="copyToClipboard(`{to_line}`)">Copy Recipient Addresses</button>
-            """, unsafe_allow_html=True))
+            st.subheader("Recipient Addresses:")
+            st.text_area("To:", to_line, height=100)
             
             st.info("Don't forget to attach the site boundary image/document before sending the email!")
         else:
